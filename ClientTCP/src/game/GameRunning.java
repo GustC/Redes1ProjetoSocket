@@ -45,7 +45,9 @@ public class GameRunning {
         ObjectInputStream objectInputStream = new ObjectInputStream(client.socket.getInputStream());
         HashMap<String,Boolean> listOfMessages = (HashMap<String,Boolean>) objectInputStream.readObject();
         System.out.println("Message received from the server : " +listOfMessages.get("isConnected"));
-        
+        if(listOfMessages.get("isConnected")){
+            System.out.println(Game.START_MESSAGE);        
+        }
 //        if()
         
 //        OutputStream os = client.socket.getOutputStream();
@@ -84,13 +86,23 @@ public class GameRunning {
         System.out.println(echo);
 //        while(true){
             ObjectOutputStream output = new ObjectOutputStream(client.socket.getOutputStream());
-            HashMap<String,Integer> resp = new HashMap<>();
-            resp.put("start", 1);
+            HashMap<String,Boolean> resp = new HashMap<>();
+            resp.put("getAlternatives", true);
             output.writeObject(resp);
             
             ObjectInputStream objectInputStream = new ObjectInputStream(client.socket.getInputStream());
-            HashMap<String,Boolean> listOfMessages = (HashMap<String,Boolean>) objectInputStream.readObject();
-            System.out.println("Message received from the server : " +listOfMessages.get("isConnected"));
+            HashMap<String,Object> listOfMessages = (HashMap<String,Object>) objectInputStream.readObject();
+//            System.out.println("Message received from the server : " +listOfMessages.get("isConnected"));
+            System.out.println(listOfMessages.get("question"));
+            int op;
+            do{
+                System.out.print("digite a sua resposta : ");
+                op = scanner.nextInt();
+                if(op < 1 || op > 4)
+                    System.out.println("Alternativa invalida! Digite um valor entre 1 e 4 ");
+            }while(op < 1 || op > 4);
+            
+             output = new ObjectOutputStream(client.socket.getOutputStream());
 //        }
         
 //        if(echo.equals("Bem Vindo!"));{
