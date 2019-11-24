@@ -11,4 +11,5 @@ package game;
  */
 public class Game {
     static final String START_MESSAGE = "Bem vindo ao quiz!";
+    static final int NUMBER_QUESTIONS = 10;
 }

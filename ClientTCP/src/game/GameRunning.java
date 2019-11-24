@@ -84,16 +84,18 @@ public class GameRunning {
     public void startGame()throws IOException, InterruptedException, ClassNotFoundException {
         String echo = client.sendEcho("play");
         System.out.println(echo);
-//        while(true){
+        int questions = 0;
+        while(questions < Game.NUMBER_QUESTIONS){
             ObjectOutputStream output = new ObjectOutputStream(client.socket.getOutputStream());
-            HashMap<String,Boolean> resp = new HashMap<>();
-            resp.put("getAlternatives", true);
+            HashMap<String,Object> resp = new HashMap<>();
+            resp.put("option", "getAlternatives");
             output.writeObject(resp);
             
             ObjectInputStream objectInputStream = new ObjectInputStream(client.socket.getInputStream());
             HashMap<String,Object> listOfMessages = (HashMap<String,Object>) objectInputStream.readObject();
-//            System.out.println("Message received from the server : " +listOfMessages.get("isConnected"));
+            
             System.out.println(listOfMessages.get("question"));
+            
             int op;
             do{
                 System.out.print("digite a sua resposta : ");
@@ -102,8 +104,20 @@ public class GameRunning {
                     System.out.println("Alternativa invalida! Digite um valor entre 1 e 4 ");
             }while(op < 1 || op > 4);
             
-             output = new ObjectOutputStream(client.socket.getOutputStream());
-//        }
+            output = new ObjectOutputStream(client.socket.getOutputStream());
+            resp = new HashMap<>();            
+            
+            resp.put("option", "response");
+            resp.put("alternative", op);
+            
+            output.writeObject(resp);
+            
+            objectInputStream = new ObjectInputStream(client.socket.getInputStream());
+            listOfMessages = (HashMap<String,Object>) objectInputStream.readObject();
+            
+            System.out.println(listOfMessages.get("result"));  
+            questions++;
+        }
         
 //        if(echo.equals("Bem Vindo!"));{
 //            int respostas = 0;
