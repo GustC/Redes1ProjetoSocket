@@ -20,6 +20,7 @@ public class ServerTCP implements AutoCloseable {
             socketTCP = new ServerSocket(8080);
             
             while(true){
+                System.out.println("Aguardando conexões");
                 Socket player1 = socketTCP.accept();
                 System.out.println("Player 1 conectado!");
                 Socket player2 = socketTCP.accept();

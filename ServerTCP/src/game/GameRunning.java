@@ -5,6 +5,7 @@
  */
 package game;
 
+import static game.GameServer.NUMBER_QUESTIONS;
 import static game.GameServer.getRandom;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -48,6 +49,7 @@ public class GameRunning implements Runnable{
         System.out.println("Partida criada entre "+socketPlayer1.getPort()+" e "+socketPlayer2.getPort());
         DataOutputStream outToClient,outToClient2;
         BufferedReader br , br2;
+        int pointsPlayer1 = 0 ,pointsPlayer2 = 0;
         try {
 
             ObjectOutputStream player1output = new ObjectOutputStream(socketPlayer1.getOutputStream());
@@ -62,19 +64,20 @@ public class GameRunning implements Runnable{
             // pega uma palavra aleatoria do banco de palavras
             
             HashMap<String,Object> responseGame;
-            HashMap<String,Boolean> responsePlayer1;
-            HashMap<String,Boolean> responsePlayer2;
-            for(int questions = 0 ; questions < 3 ; questions++){
-                
+            HashMap<String,Object> responsePlayer1;
+            HashMap<String,Object> responsePlayer2;
+            int questions = 0 ;
+            while(questions < NUMBER_QUESTIONS){
+                System.out.println("Questao "+questions);
 
                 ObjectInputStream player1input = new ObjectInputStream(socketPlayer1.getInputStream());
                 ObjectInputStream player2input = new ObjectInputStream(socketPlayer2.getInputStream());
                 
-                responsePlayer1 = (HashMap<String,Boolean>)  player1input.readObject();
-                responsePlayer2 = (HashMap<String,Boolean>)  player2input.readObject();
+                responsePlayer1 = (HashMap<String,Object>)  player1input.readObject();
+                responsePlayer2 = (HashMap<String,Object>)  player2input.readObject();
                 
                 String option = responseClient(responsePlayer1, responsePlayer2);
-                
+                System.out.println("Opçao recebida = "+ option);
                 switch(option){                
                     case "alternatives":
                         String wordRand = getRandom();// pega uma palavra random
@@ -89,6 +92,40 @@ public class GameRunning implements Runnable{
                         responseGame.put("question", question);
                         player1output.writeObject(responseGame);// envia a questao para o jogador 1
                         player2output.writeObject(responseGame);// envia a questao para o jogador 2
+                        questions++;
+                        break;
+                    case "response":
+                        int answerPlayer1, answerPlayer2;
+                        answerPlayer1 = (int) responsePlayer1.get("alternative");
+                        answerPlayer2 = (int) responsePlayer2.get("alternative");
+                        
+                        player1output = new ObjectOutputStream(socketPlayer1.getOutputStream());
+                        player2output = new ObjectOutputStream(socketPlayer2.getOutputStream());
+                        responseGame = new HashMap<>();                        
+                        
+                        
+                        String message, message2;
+                        if(answerPlayer1 == this.correctAlternative){
+                            pointsPlayer1 ++;
+                            message = "Resposta correta!";
+                        } else {
+                            message = "Resposta incorreta!";
+                        }
+                        
+                        if(answerPlayer2 == this.correctAlternative){
+                            pointsPlayer2 ++;
+                            message2 = "Resposta correta!";
+                        } else {                            
+                            message2 = "Resposta incorreta!";
+                        }
+                        
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("result", message);
+                        player1output.writeObject(responseGame);
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("result", message2);// envia a questao para o jogador 1
+                        player2output.writeObject(responseGame);
+                        
                         break;
                     case "result":
                         break;
@@ -117,10 +154,15 @@ public class GameRunning implements Runnable{
         
     }
     
-    public String responseClient(HashMap<String,Boolean> responsePlayer1,HashMap<String,Boolean> responsePlayer2 ){
-        if(responsePlayer1.get("getAlternatives") && responsePlayer2.get("getAlternatives"))
+    public String responseClient(HashMap<String,Object> responsePlayer1,HashMap<String,Object> responsePlayer2 ){
+        String optionPlayer1 = responsePlayer1.get("option").toString();
+        String optionPlayer2 = responsePlayer2.get("option").toString();
+        
+        if(optionPlayer1.equals("getAlternatives") && optionPlayer2.equals("getAlternatives"))
             return "alternatives";
-        else if(responsePlayer1.get("result") && responsePlayer2.get("result"))
+        else if(optionPlayer1.equals("response") && optionPlayer2.equals("response"))
+            return "response";        
+        else if(optionPlayer1.equals("result") && optionPlayer2.equals("result"))
             return "result";
         else 
             return "";

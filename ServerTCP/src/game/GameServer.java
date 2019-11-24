@@ -17,6 +17,8 @@ public class GameServer {
     //Banco de palavras
     static String[] palavras = new String[]{"bola","tapa","olho","capa","predio","quadrado"};
     
+    static final int NUMBER_QUESTIONS = 10;
+    
     static public String shuffle(String input){
         List<Character> characters = new ArrayList<Character>();
         for(char c:input.toCharArray()){
