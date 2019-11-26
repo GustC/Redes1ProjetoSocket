@@ -12,7 +12,6 @@ public class EchoClient {
     Socket socket;
     private InetAddress address;    
  
-    private byte[] buf;
  
     public EchoClient() throws SocketException, UnknownHostException, IOException{
         
@@ -24,24 +23,4 @@ public class EchoClient {
         return socket.isConnected();
     }
 
-    
- 
-    public String sendEcho(String msg) throws IOException{
-        buf = msg.getBytes();
-        System.out.println("Client - send - "+msg);
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 4445);
-//        socket.send(packet);
-        byte[] buf_temp = new byte[256];
-        packet = new DatagramPacket(buf_temp, buf_temp.length);
-//        socket.receive(packet);
-        String received = new String(
-          packet.getData(), 0, packet.getLength());
-        return received;
-    }
-    
- 
-    public void close() {
-        buf = "".getBytes();
-//        socket.close();
-    }
 }

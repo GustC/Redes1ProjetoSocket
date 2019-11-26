@@ -16,26 +16,20 @@ public class ClientTCP {
 
     static Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
-        GameRunning x = new GameRunning();
-
-        int port = 8080;
-        String host = "localhost";
+        GameRunning gameRunning = new GameRunning();
         try{
             int op;
             System.out.println("1 - Jogar\n2 - Sair");
             op = scanner.nextInt();
             if(op == 1){                
-//                Client client = new Client(host,port);
-                x.setup();
-                x.loading();
-                x.startGame();
-//                x.SendFromServer();
-//                x.tearDown();
+                gameRunning.setup();
+                if(gameRunning.loading())
+                    gameRunning.startGame();
             } 
                 
         } catch (Exception e ){
             System.err.println(e.getMessage());
-        }
+        } 
     }
     
 }
