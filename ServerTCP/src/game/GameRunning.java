@@ -18,6 +18,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -47,8 +48,6 @@ public class GameRunning implements Runnable{
     @Override
     public void run() {
         System.out.println("Partida criada entre "+socketPlayer1.getPort()+" e "+socketPlayer2.getPort());
-        DataOutputStream outToClient,outToClient2;
-        BufferedReader br , br2;
         int pointsPlayer1 = 0 ,pointsPlayer2 = 0;
         try {
 
@@ -61,21 +60,20 @@ public class GameRunning implements Runnable{
             player1output.writeObject(response);
             System.out.println("Msg enviada para "+socketPlayer2.getPort());
             player2output.writeObject(response);
-            // pega uma palavra aleatoria do banco de palavras
             
             HashMap<String,Object> responseGame;
             HashMap<String,Object> responsePlayer1;
             HashMap<String,Object> responsePlayer2;
             Boolean end = false;
             int questions = 0 ;
-            while(socketPlayer1.isConnected() && socketPlayer2.isConnected()){
-                System.out.println("Questao "+questions);
+            while( socketPlayer1.isConnected() && socketPlayer2.isConnected() && !end ){
+                
                 ObjectInputStream player1input = null ;
                 ObjectInputStream player2input = null ;
-                if(socketPlayer1.isConnected())
-                    player1input = new ObjectInputStream(socketPlayer1.getInputStream());
-                if(socketPlayer2.isConnected())
-                    player2input = new ObjectInputStream(socketPlayer2.getInputStream());
+                
+                player1input = new ObjectInputStream(socketPlayer1.getInputStream());
+                
+                player2input = new ObjectInputStream(socketPlayer2.getInputStream());
                 
                 responsePlayer1 = (HashMap<String,Object>)  player1input.readObject();
                 responsePlayer2 = (HashMap<String,Object>)  player2input.readObject();
@@ -86,6 +84,7 @@ public class GameRunning implements Runnable{
                 String message, message2;
                 switch(option){                
                     case "alternatives":
+                        // Jogadores solicitaram uma nova questao
                         String wordRand = getRandom();// pega uma palavra random
                         String shuffedRand = GameServer.shuffle(wordRand);// embaralha a palavra selecionada
                         String question = "Qual é o formato correto da palavra "+shuffedRand+"?\n";
@@ -101,6 +100,7 @@ public class GameRunning implements Runnable{
                         
                         break;
                     case "response":
+                        // Jogadores responderam uma questao
                         int answerPlayer1, answerPlayer2;
                         answerPlayer1 = (int) responsePlayer1.get("alternative");
                         answerPlayer2 = (int) responsePlayer2.get("alternative");
@@ -131,28 +131,32 @@ public class GameRunning implements Runnable{
                         player2output.writeObject(responseGame);
                         questions++;
                         break;
-                    case "result":
-                       if(pointsPlayer1>pointsPlayer2){
-                           message = "Você ganhou!\nSua pontuação foi:"+pointsPlayer1;
-                           message2 = "Você perdeu!\nSua pontuação foi:"+pointsPlayer2;
-                       }
-                       else if(pointsPlayer1<pointsPlayer2){
-                           message2 = "Você ganhou!\nSua pontuação foi:"+pointsPlayer2;
-                           message = "Você perdeu!\nSua pontuação foi:"+pointsPlayer1;
-                       }else{
-                           message = "Houve um empate!\nSua pontuação foi:"+pointsPlayer1+"\nPontuação do oponente:"+pointsPlayer2;
-                           message2 = "Houve um empate!\nSua pontuação foi:"+pointsPlayer2+"\nPontuação do oponente:"+pointsPlayer1;
-                       }
-                        
-                       
+                    case "result":  
+                        //Jogadores solicitam o resultado final do jogo
+                        player1output = new ObjectOutputStream(socketPlayer1.getOutputStream());
+                        player2output = new ObjectOutputStream(socketPlayer2.getOutputStream()); 
+                        if(pointsPlayer1>pointsPlayer2){
+                            message = "Você ganhou!\nSua pontuação foi:"+pointsPlayer1;
+                            message2 = "Você perdeu!\nSua pontuação foi:"+pointsPlayer2;
+                        }
+                        else if(pointsPlayer1<pointsPlayer2){
+                            message2 = "Você ganhou!\nSua pontuação foi:"+pointsPlayer2;
+                            message = "Você perdeu!\nSua pontuação foi:"+pointsPlayer1;
+                        }else{
+                            message = "Houve um empate!\nSua pontuação foi:"+pointsPlayer1+"\nPontuação do oponente:"+pointsPlayer2;
+                            message2 = "Houve um empate!\nSua pontuação foi:"+pointsPlayer2+"\nPontuação do oponente:"+pointsPlayer1;
+                        }
+
+
                         responseGame = new HashMap<>(); 
-                        responseGame.put("result", "teste");
+                        responseGame.put("result", message);
                         player1output.writeObject(responseGame);
                         responseGame = new HashMap<>(); 
-                        responseGame.put("result", "teste");// envia a questao para o jogador 1
+                        responseGame.put("result", message2);// envia a questao para o jogador 1
                         player2output.writeObject(responseGame);
                         break;
                     case "end":    
+                        //Jogadores solicitam finalizar o jogo
                         responseGame = new HashMap<>(); 
                         responseGame.put("end", true);
                         player1output.writeObject(responseGame);
@@ -163,25 +167,42 @@ public class GameRunning implements Runnable{
                         break;
                     default:
                         break;
-                
                 }
             }
+            System.out.println("A partida entre Jogador1("+socketPlayer1.getPort()+") e Jogador2("+socketPlayer2.getPort()+") \nfoi finalizada.");
+        } catch (SocketException ex){
+            System.err.println(ex.getMessage());
+                if(socketPlayer1.isConnected()){
+                    try {
+                        ObjectOutputStream player1output = new ObjectOutputStream(socketPlayer1.getOutputStream());
+                        HashMap<String,Object> response = new HashMap<>();
+                        response.put("error", true);
+                        response.put("message", "Ocorreu um erro na conexão.");
+                        player1output.writeObject(response);
+                    } catch (IOException ex1) {
+                        
+                    }                
+                }
+                if(socketPlayer2.isConnected()){
+                    try {
+                        ObjectOutputStream player2output = new ObjectOutputStream(socketPlayer2.getOutputStream());
+                        HashMap<String,Object> response = new HashMap<>();
+                        response.put("error", true);
+                        response.put("message", "Ocorreu um erro na conexão.");
+                        player2output.writeObject(response);
+                    } catch (IOException ex1) {
+                        
+                    }
+                }
             
             
-//            ObjectInputStream player1input = new ObjectInputStream(socketPlayer1.getInputStream());
-//            System.out.println("Msg recebida do player 1 = "+(String)player1input.readObject());
-//            ObjectInputStream player2input = new ObjectInputStream(socketPlayer2.getInputStream());
-//            System.out.println("Msg recebida do player 2 = "+(String)player1input.readObject());
-//            while(true){
-//                
-//            }
-
         } catch (IOException ex) {
             System.err.println(ex.getCause());
             Logger.getLogger(GameRunning.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
+            System.err.println(ex.getCause());
             Logger.getLogger(GameRunning.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } 
         
         
     }

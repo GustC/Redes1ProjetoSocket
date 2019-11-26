@@ -15,7 +15,8 @@ import java.util.Random;
  */
 public class GameServer {
     //Banco de palavras
-    static String[] palavras = new String[]{"bola","tapa","olho","capa","predio","quadrado"};
+    static String[] palavras = new String[]{"bola","tapa","olho","capa","predio","quadrado","macaco","sapato",
+    "mouse","teclado","celular","redes"};
     
     static final int NUMBER_QUESTIONS = 10;
     

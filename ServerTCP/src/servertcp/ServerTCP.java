@@ -26,18 +26,7 @@ public class ServerTCP implements AutoCloseable {
                 Socket player2 = socketTCP.accept();
                 System.out.println("Player 2 conectado!");
                 new Thread(new GameRunning(player1,player2)).start(); 
-//                if(connectionSocket.isConnected()){
-//                    System.out.println("Cliente conectado!");
-//                    if(lastClient != null)
-//                        new Thread(new GameRunning(lastClient,connectionSocket)).start();
-//                        
-//                    else
-//                        lastClient = connectionSocket;
-//                    
-//                    
-//                };
             }
-//            server.start();
         } catch ( Exception e ) { 
             System.err.println(e.getMessage());
         }
