@@ -66,18 +66,24 @@ public class GameRunning implements Runnable{
             HashMap<String,Object> responseGame;
             HashMap<String,Object> responsePlayer1;
             HashMap<String,Object> responsePlayer2;
+            Boolean end = false;
             int questions = 0 ;
-            while(questions < NUMBER_QUESTIONS){
+            while(socketPlayer1.isConnected() && socketPlayer2.isConnected()){
                 System.out.println("Questao "+questions);
-
-                ObjectInputStream player1input = new ObjectInputStream(socketPlayer1.getInputStream());
-                ObjectInputStream player2input = new ObjectInputStream(socketPlayer2.getInputStream());
+                ObjectInputStream player1input = null ;
+                ObjectInputStream player2input = null ;
+                if(socketPlayer1.isConnected())
+                    player1input = new ObjectInputStream(socketPlayer1.getInputStream());
+                if(socketPlayer2.isConnected())
+                    player2input = new ObjectInputStream(socketPlayer2.getInputStream());
                 
                 responsePlayer1 = (HashMap<String,Object>)  player1input.readObject();
                 responsePlayer2 = (HashMap<String,Object>)  player2input.readObject();
                 
                 String option = responseClient(responsePlayer1, responsePlayer2);
                 System.out.println("Opçao recebida = "+ option);
+                
+                String message, message2;
                 switch(option){                
                     case "alternatives":
                         String wordRand = getRandom();// pega uma palavra random
@@ -92,7 +98,7 @@ public class GameRunning implements Runnable{
                         responseGame.put("question", question);
                         player1output.writeObject(responseGame);// envia a questao para o jogador 1
                         player2output.writeObject(responseGame);// envia a questao para o jogador 2
-                        questions++;
+                        
                         break;
                     case "response":
                         int answerPlayer1, answerPlayer2;
@@ -100,11 +106,9 @@ public class GameRunning implements Runnable{
                         answerPlayer2 = (int) responsePlayer2.get("alternative");
                         
                         player1output = new ObjectOutputStream(socketPlayer1.getOutputStream());
-                        player2output = new ObjectOutputStream(socketPlayer2.getOutputStream());
-                        responseGame = new HashMap<>();                        
+                        player2output = new ObjectOutputStream(socketPlayer2.getOutputStream());                        
                         
                         
-                        String message, message2;
                         if(answerPlayer1 == this.correctAlternative){
                             pointsPlayer1 ++;
                             message = "Resposta correta!";
@@ -125,9 +129,37 @@ public class GameRunning implements Runnable{
                         responseGame = new HashMap<>(); 
                         responseGame.put("result", message2);// envia a questao para o jogador 1
                         player2output.writeObject(responseGame);
-                        
+                        questions++;
                         break;
                     case "result":
+                       if(pointsPlayer1>pointsPlayer2){
+                           message = "Você ganhou!\nSua pontuação foi:"+pointsPlayer1;
+                           message2 = "Você perdeu!\nSua pontuação foi:"+pointsPlayer2;
+                       }
+                       else if(pointsPlayer1<pointsPlayer2){
+                           message2 = "Você ganhou!\nSua pontuação foi:"+pointsPlayer2;
+                           message = "Você perdeu!\nSua pontuação foi:"+pointsPlayer1;
+                       }else{
+                           message = "Houve um empate!\nSua pontuação foi:"+pointsPlayer1+"\nPontuação do oponente:"+pointsPlayer2;
+                           message2 = "Houve um empate!\nSua pontuação foi:"+pointsPlayer2+"\nPontuação do oponente:"+pointsPlayer1;
+                       }
+                        
+                       
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("result", "teste");
+                        player1output.writeObject(responseGame);
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("result", "teste");// envia a questao para o jogador 1
+                        player2output.writeObject(responseGame);
+                        break;
+                    case "end":    
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("end", true);
+                        player1output.writeObject(responseGame);
+                        responseGame = new HashMap<>(); 
+                        responseGame.put("end", true);// envia a questao para o jogador 1
+                        player2output.writeObject(responseGame); 
+                        end = true;
                         break;
                     default:
                         break;
@@ -164,6 +196,8 @@ public class GameRunning implements Runnable{
             return "response";        
         else if(optionPlayer1.equals("result") && optionPlayer2.equals("result"))
             return "result";
+        else if(optionPlayer1.equals("end") && optionPlayer2.equals("end"))
+            return "end";
         else 
             return "";
     }
